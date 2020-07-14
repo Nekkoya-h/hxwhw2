@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hxw.hw2.mapper.UserMapper">
+
+    <!-- sql片段：提供动态sql的利用率，不使用where标签目的是使sql片段重用率高些 -->
+    <sql id="user_query">
+        <if test="userCustom != null">
+            <if test="userCustom.sex!=null and userCustom.sex!=''">
+                and sex = #{userCustom.sex}
+            </if>
+            <if test="userCustom.username!=null and userCustom.username!=''">
+                and username like concat('%',#{userCustom.username},'%')
+            </if>
+        </if>
+    </sql>
+
+    <sql id="user_query_id">
+        <if test="ids!=null">
+            <foreach collection="ids" item="id" open="and id in (" close=")" separator=",">
+                #{id}
+            </foreach>
+        </if>
+    </sql>
+
+    <select id="findById" parameterType="Integer" resultType="User">
+        select * from user where id = #{id}
+    </select>
+
+    <!-- 根据用户名进行模糊查询用户信息 resultType类型写的单一类型，例如若返回值是集合类型，则写集合的泛型类型即可 -->
+    <select id="findByName" parameterType="String" resultType="User">
+        select * from user where username like concat('%',#{name},'%')
+    </select>
+
+    <!-- 添加用户信息 parameterType类型是pojo类型时，要求#{key}中的key必须与pojo中的属性名称一致 -->
+    <insert id="insert" parameterType="User">
+        <!-- 获取插入用户的id -->
+        <selectKey keyProperty="id" resultType="Integer" order="AFTER">
+            select last_insert_id()
+        </selectKey>
+
+        insert into user(username,sex,birthday,address) values(#{username},#{sex},#{birthday},#{address})
+    </insert>
+
+    <!-- 更新用户 -->
+    <update id="update" parameterType="User">
+        update user set username=#{username},birthday=#{birthday},sex=#{sex},address=#{address} where id = #{id}
+    </update>
+
+    <!-- 删除用户 -->
+    <delete id="delete" parameterType="Integer">
+        delete from user where id = #{id}
+    </delete>
+
+    <!-- 需求：通过用户性别和姓名查询用户列表，且id值是15或20或25  PS：不允许性别或者姓名为null或者空串 -->
+    <select id="findListByIds" parameterType="UserQueryVO" resultType="UserCustom">
+        select * from user
+        <where>
+            <include refid="user_query"></include>
+            <include refid="user_query_id"></include>
+        </where>
+    </select>
+
+</mapper>
